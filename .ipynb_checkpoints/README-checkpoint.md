@@ -1,4 +1,4 @@
-# AWS's SageMaker Studio, Production Pipelines, and MLOps
+# SageMaker Studio, Production Pipelines, and MLOps
 
 There are a lot of considerations in moving from a local model used to train and predict on batch data to a production model that makes predictions in real time. This series of posts explores how to create an MLOps compliant production pipeline using AWS's SageMaker Studio.
 
