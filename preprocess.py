@@ -17,7 +17,6 @@ import category_encoders as ce
 import joblib
 import os
 
-
 if __name__ == '__main__':
     input_path = '/opt/ml/processing/input'
     output_path = '/opt/ml/processing/output'
@@ -32,19 +31,23 @@ if __name__ == '__main__':
     
     cat_cols = ['zip_agg Customer Subtype', 'zip_agg Customer main type']
 
-    df = pd.read_csv(os.path.join(input_path, 'full_data.csv'))
+    ori_df = pd.read_csv(os.path.join(input_path, 'full_data.csv'))
+    df = pd.DataFrame(ori_df['Nbr mobile home policies']).merge(ori_df.drop('Nbr mobile home policies', axis=1), left_index=True, right_index=True)
     print('Preprocessing data')
     encoder = ce.OneHotEncoder(cols=cat_cols, use_cat_names=True, handle_missing='return_nan')
-    processed_df = encoder.fit_transform(df)
 
     train_data, validation_data, test_data = np.split(
-        processed_df.sample(frac=1, random_state=1729),
-        [int(0.7 * len(processed_df)), int(0.9 * len(processed_df))],)
+        df.sample(frac=1, random_state=1729),
+        [int(0.7 * len(df)), int(0.9 * len(df))],)
+    
+    train_data = encoder.fit_transform(train_data)
+    validation_data = encoder.transform(validation_data)
+    test_data = encoder.transform(test_data)
     
     print('Saving dataframe')
-    train_data.to_csv(os.path.join(output_path, 'train', 'train_feats.csv'))
-    validation_data.to_csv(os.path.join(output_path, 'validate', 'validate_feats.csv'))
-    test_data.to_csv(os.path.join(output_path, 'test', 'test_feats.csv'))
+    train_data.to_csv(os.path.join(output_path, 'train', 'train_feats.csv'), index=False)
+    validation_data.to_csv(os.path.join(output_path, 'validate', 'validate_feats.csv'), index=False)
+    test_data.to_csv(os.path.join(output_path, 'test', 'test_feats.csv'), index=False)
                               
     print('Saving preprocessor joblib')
     encoder_name = 'preprocessor.joblib'
