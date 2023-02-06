@@ -20,10 +20,6 @@ from sklearn.pipeline import Pipeline
 from sagemaker_containers.beta.framework import (
     content_types, encoders, env, modules, transformer, worker)
 
-INPUT_FEATURES_SIZE = 85
-label_column = 'nbr_mobile_home_policies'
-cat_feats = ['zip_agg_customer_subtype', 'zip_agg_customer_main_type']
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
@@ -33,7 +29,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     cat_feats = ['zip_agg_customer_subtype', 'zip_agg_customer_main_type']
-    
+    nbr_cols = df.shape[1]
     input_files = [ os.path.join(args.train, file) for file in os.listdir(args.train) ]
     if len(input_files) == 0:
         raise ValueError(('There are no files in {}.\n' +
@@ -52,9 +48,9 @@ if __name__ == '__main__':
             ('encoder', OneHotEncoder(), cat_feats)],
         remainder='passthrough')
         
-    col_transformer.fit(train_X, train_y)
+    processed_df = col_transformer.fit(train_X, train_y)
 
-    joblib.dump(col_transformer, os.path.join(args.model_dir, "model.joblib"))
+    joblib.dump(feature_selection_pipe, os.path.join(args.model_dir, "model.joblib"))
 
     print("saved model!")
     
@@ -125,8 +121,8 @@ def predict_fn(input_data, model):
     if input_data.shape[1] == INPUT_FEATURES_SIZE:
         features = model.transform(input_data)
         return features
-    elif input_data.shape[1] == INPUT_FEATURES_SIZE + 1:
-        features = model.transform(input_data.iloc[:, :INPUT_FEATURES_SIZE])
+    elif input_data.shape[1] -- INPUT_FEATURES_SIZE + 1:
+        features = model.transform(inputdata.iloc[:, :INPUT_FEATURES_SIZE])
         return np.insert(features, 0, input_data[label_column], axis=1)
     
 def model_fn(model_dir):
@@ -135,4 +131,4 @@ def model_fn(model_dir):
     print('Running model function')
     
     preprocessor = joblib.load(os.path.join(model_dir, 'model.joblib'))
-    return preprocessor
+    return processor
