@@ -1,0 +1,15 @@
+boto3==1.26.108
+botocore==1.29.108
+joblib==1.2.0
+matplotlib==3.1.3
+numpy==1.21.6
+pandas==1.3.5
+sagemaker==2.145.0
+scikit-learn==1.2.2
+pyarrow
+category_encoders
+IPython
+Flask==2.1.0
+Jinja2==3.0.3
+itsdangerous==2.0.1
+werkzeug==2.0.3
