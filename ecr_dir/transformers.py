@@ -188,28 +188,75 @@ class MultilabelTransformer(BaseEstimator, TransformerMixin):
     def get_feature_names(self):
         return self._col_names
     
+# class DropSingleValueCols(BaseEstimator, TransformerMixin):
+#     def __init__(self):
+#         self._col_names = []
+        
+#     def fit(self, X, y=None):
+#         for col in X.columns:
+#             if X[col].nunique() > 1:
+#                 self._col_names.append(col)
+#         return self
+    
+#     def transform(self, X, y=None):
+#         print('Running DropSingleValueCols')
+#         X = X[self._col_names]
+#         return X
+    
+#     def get_feature_names(self):
+#         return self._col_names
+
 class DropSingleValueCols(BaseEstimator, TransformerMixin):
     def __init__(self):
+        self._col_index = []
         self._col_names = []
         
     def fit(self, X, y=None):
-        for col in X.columns:
-            if X[col].nunique() > 1:
-                self._col_names.append(col)
+        for i in range(len(X.columns)):
+            if X.iloc[:,i].nunique() > 1:
+                self._col_index.append(i)
+        self._col_names = list(X.iloc[:,self._col_index].columns)
         return self
     
     def transform(self, X, y=None):
         print('Running DropSingleValueCols')
-        X = X[self._col_names]
+        X = X.iloc[:,self._col_index]
         return X
     
     def get_feature_names(self):
         return self._col_names
+       
+# class RemoveCollinearity(BaseEstimator, TransformerMixin):
+#     def __init__(self):
+#         self._corr_dict = {}
+#         self._drop_cols = set()
+#         self._col_names = []
+        
+#     def fit(self, X, y=None):
+#         drop_list = []
+#         for i, col in enumerate(X.columns):
+#             sliced_col = abs(X.iloc[i+1:, i])
+#             corr_feats = sliced_col[sliced_col > .97].index.tolist()
+#             if len(corr_feats) > 0:
+#                 self._corr_dict[col] = corr_feats
+#                 drop_list += corr_feats
+#         self._drop_cols = set(drop_list)
+#         self._col_names = list(set(X.columns) - self._drop_cols)
+#         return self
     
+#     def transform(self, X, y=None):
+#         print('Running RemoveCollinearity')
+#         X = X[self._col_names]
+#         return X
+    
+#     def get_feature_names(self):
+#         return self._col_names
+
 class RemoveCollinearity(BaseEstimator, TransformerMixin):
     def __init__(self):
         self._corr_dict = {}
         self._drop_cols = set()
+        self._col_index = []
         self._col_names = []
         
     def fit(self, X, y=None):
@@ -222,11 +269,14 @@ class RemoveCollinearity(BaseEstimator, TransformerMixin):
                 drop_list += corr_feats
         self._drop_cols = set(drop_list)
         self._col_names = list(set(X.columns) - self._drop_cols)
+        for i, col in enumerate(X.columns):
+            if col in self._col_names:
+                self._col_index.append(i)
         return self
     
     def transform(self, X, y=None):
         print('Running RemoveCollinearity')
-        X = X[self._col_names]
+        X =  X.iloc[:,self._col_index]
         return X
     
     def get_feature_names(self):

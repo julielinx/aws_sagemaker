@@ -47,6 +47,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--input-model', type=str, default=os.environ.get('SM_CHANNEL_INPUT_MODEL'))
+    parser.add_argument('--feature-names', type=str, default=os.environ.get('SM_CHANNEL_FEATURE_NAMES'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR'))
     args = parser.parse_args()
     
@@ -54,10 +55,13 @@ if __name__ == '__main__':
     
     print('Loading preprocessor')
     preprocessor = joblib.load(os.path.join(args.input_model, 'preprocessor.joblib'))
+    print('Loading feature names')
+    feat_names = joblib.load(os.path.join(args.feature_names, 'feature_names.joblib'))
     
     print('Saving models')
     # This is done so that it is all put into a tar.gz file that can be used at inference
     joblib.dump(preprocessor, os.path.join(args.model_dir, 'preprocessor.joblib'))
+    joblib.dump(feat_names, os.path.join(args.model_dir, 'feature_names.joblib'))
 
 def input_fn(input_data, content_type):
     '''Parse input data payload
@@ -70,6 +74,7 @@ def input_fn(input_data, content_type):
     print(f'Loading input data with content type {content_type}')
     print(f'Input data: {input_data}')
     print('Input data type', type(input_data))
+    print('Content type:', content_type)
     
     if content_type == 'text/csv':
         df = pd.read_csv(StringIO(input_data))
@@ -82,50 +87,7 @@ def input_fn(input_data, content_type):
         json_data = json.loads(input_data)
         print('json data object:', json_data)
         print('json data object type:', type(json_data))
-        try:
-            df = pd.DataFrame(json_data, index=[0,])
-            print('Code 1 worked')
-        except Exception as error:
-            print("Code 1 resulted in error:", error)
-            traceback.print_exc()
-        try:
-            df = pd.DataFrame.from_records(json_data, index=[0,])
-            print('Code 2 worked')
-        except Exception as error:
-            print("Code 2 resulted in error:", error)
-            traceback.print_exc()
-        try:
-            json_dict = {}
-            for i, val in enumerate(json_data.keys()):
-                json_dict[val] = [json_data[val]]
-            df = pd.DataFrame(json_dict)
-            print('Code 3 worked')
-        except Exception as error:
-            print("Code 3 resulted in error:", error)
-            traceback.print_exc()
-        json_data = ast.literal_eval(input_data)
-        try:
-            df = pd.DataFrame(json_data)
-            print('Code 4 worked')
-        except Exception as error:
-            print("Code 4 resulted in error:", error)
-            traceback.print_exc()
-        try: 
-            df = pd.DataFrame.from_records(json_data)
-            print('Code 5 worked')
-        except Exception as error:
-            print("Code 5 resulted in error:", error)
-            traceback.print_exc()
-        try:
-            json_dict = {}
-            for i, val in enumerate(json_data.keys()):
-                json_dict[val] = [json_data[val]]
-            df = pd.DataFrame(json_dict)
-            print('Code 6 worked')
-        except Exception as error:
-            print("Code 6 resulted in error:", error)
-            traceback.print_exc()
-            print('None of the methods worked')
+        df = pd.DataFrame(json_data, index=[0,])
     else:
         raise ValueError("{} not supported by script".format(content_type))
     print(df)
@@ -140,14 +102,17 @@ def output_fn(prediction, accept):
     '''
     
     print(f'Running output function with accept type {accept}')
+    feat_names = joblib.load(os.path.join(model_dir, 'feature_names.joblib'))
+    print('Feature names:', feat_names)
+    df = pd.DataFrame(prediction, columns=feat_names)
+    print('Output data:', df.head())
     
     if accept == 'application/json':
         # instances = []
         # for row in prediction.tolist():
         #     instances.append({'features': row})
         # json_output = {'instances': instances}
-        json_output = prediction.to_dict(orient='records')        
-        return worker.Response(json.dumps(json_output), mimetype=accept)
+        return worker.Response(df.to_json(orient='records'), mimetype=accept)
     elif accept == 'text/csv':
         return worker.Response(encoders.encode(prediction, accept), mimetype=accept)
     else:

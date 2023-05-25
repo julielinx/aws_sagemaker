@@ -125,6 +125,18 @@ if __name__ == '__main__':
         ('preprocess', preprocessor),
         ('additional', extras)])
 
+#     processor = ColumnTransformer([
+#         ('truefalse', TrueFalseTransformer(), true_false),
+#         ('onehot', OneHotTransformer(), one_hot),
+#         ('dates', DateTransformer(), date_cols),
+#         ('floats', FloatTransformer(), float_cols),
+#         ('listmax', ListMaxTransformer(), max_of_list),
+#         ('nunique', ListNuniqueTransformer(), count_unique),
+#         ('descstats', DescStatTransformer(), desc_stat_cols),
+#         ('multilabel', MultilabelTransformer(), 'multi_label')],
+#         verbose_feature_names_out=False)
+
+
     print('Preprocessing data')
     processor.fit(train_data.drop(args.target_col, axis=1))
     
